@@ -18,3 +18,7 @@ def get_final_score():
         final_score += key + ": " + str(score[key]) + "\n"
 
     return final_score
+
+def reset_score():
+    for key in score:
+        score[key] = 0

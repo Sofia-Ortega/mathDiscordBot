@@ -5,8 +5,8 @@ Contains Generators for the equations
 
 from random import randint
 
-def add_gen():
-    """Takes no input. Returns str of unique 2 num equation and their sum"""
+def add_gen(range1, range2):
+    """Takes in range of numbers want eq to use. Returns str of unique 2 num equation and their sum"""
     num1 = randint(1, 10)
     num2 = randint(1, 10)
     sum = num1 + num2
