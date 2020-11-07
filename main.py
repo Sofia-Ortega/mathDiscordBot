@@ -3,9 +3,10 @@
 import discord
 from generator import eq_gen
 import score
+import config
 
-token = 'NzcyOTk5MTgxNjI2NTA3MjY0.X6C1lg.00b2zKc3-9KnD6T6-Hn9C8W9H9Q'
-general_id = 758164860252061729
+token = config.CONFIG['token']
+general_id = config.CONFIG['channel_id']
 client = discord.Client()
 
 
@@ -13,7 +14,7 @@ client = discord.Client()
 async def on_message(message):
     # start game
     if message.content.startswith('--start'):
-
+        
         # setting up variables
         userScore = 0
         channel = message.channel
