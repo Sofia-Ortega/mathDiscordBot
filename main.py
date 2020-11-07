@@ -16,18 +16,28 @@ client = Bot(command_prefix=bot_prefix)
 async def startMath(context):
     channel = client.get_channel(general_id)
 
-    def checkint(m):
+    def check_int(m):
             return m.content.isdigit() or m.content == f'{bot_prefix}quit'
 
     await channel.send("Please enter the number of math question you would like: ")
-    msg = await client.wait_for('message', check=checkint)
+    msg = await client.wait_for('message', check=check_int)
     questNum = int(msg.content)
+
+    def check_lvl(m):
+        if m.content.lower() in {'easy', 'medium', 'hard'}:
+            return True
+        else:
+            return False
+
+    await channel.send("Would you like 'easy', 'medium', or 'hard' level?")
+    msg = await client.wait_for('message', check=check_lvl)
+    difficulty = msg.content
 
     # quit if user types {bot_prefix}quit
     while msg.content != f'{bot_prefix}quit' and questNum > 0:
 
 
-        equation, answer = eq_gen()
+        equation, answer = eq_gen(difficulty)
         await channel.send(equation)
 
         def checkAns(m):
