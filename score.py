@@ -20,5 +20,4 @@ def get_final_score():
     return final_score
 
 def reset_score():
-    for key in score:
-        score[key] = 0
+    score.clear()
