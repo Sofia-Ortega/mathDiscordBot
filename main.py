@@ -1,6 +1,7 @@
 """Main executor for code"""
 
 import discord
+from discord.utils import get
 from discord.ext.commands import Bot
 from generator import eq_gen
 import score
@@ -14,7 +15,9 @@ client = Bot(command_prefix=bot_prefix)
 
 @client.command(name='start')
 async def startMath(context):
-    channel = client.get_channel(general_id)
+    channel_id = await context.invoke(client.get_command('new_channel'))
+    channel = client.get_channel(channel_id)
+    await channel.send('Hey there, <@' + str(context.message.author.id) + '>')
 
     def check_int(m):
             return m.content.isdigit() or m.content == f'{bot_prefix}quit'
@@ -62,11 +65,25 @@ async def startMath(context):
 @client.command(name='quit')
 async def stopMath(context):
     channel = client.get_channel(general_id)
-    if not bool(score):
+    if not bool(score.score):
         return
     await channel.send(score.get_final_score())
     score.reset_score()
     await channel.send('goodbye!')
+
+
+@client.command(name='new_channel')
+#@client.command(name='new_channel')
+async def make_channel(context):
+    guild = context.guild
+    member = context.author
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        guild.me: discord.PermissionOverwrite(read_messages=True),
+    }
+    channel = await guild.create_text_channel('secret-channel', overwrites=overwrites)
+    await channel.set_permissions(member, read_messages=True, send_messages=True)
+    return channel.id
 
 
 @client.event
