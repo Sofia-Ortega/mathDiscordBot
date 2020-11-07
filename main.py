@@ -14,9 +14,8 @@ client = discord.Client()
 async def on_message(message):
     # start game
     if message.content.startswith('--start'):
-        
+        score.reset_score()
         # setting up variables
-        userScore = 0
         channel = message.channel
 
         def checkint(m):

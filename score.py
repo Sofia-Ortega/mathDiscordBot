@@ -19,4 +19,9 @@ def get_final_score():
 
     return final_score
 
-print(get_final_score())
+
+def reset_score():
+    for key in score:
+        score[key] = 0
+
+
