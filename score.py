@@ -19,4 +19,5 @@ def get_final_score():
 
     return final_score
 
-print(get_final_score())
+def reset_score():
+    score.clear()

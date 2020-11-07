@@ -8,6 +8,7 @@ def add_gen(rangeArray):
     """Takes array of min and max values. Returns str of unique 2 num equation and their sum"""
     num1 = randint(rangeArray[0], rangeArray[1])
     num2 = randint(rangeArray[0], rangeArray[1])
+
     sum = num1 + num2
     equation = str(num1) + " + " + str(num2) + " = "
 
