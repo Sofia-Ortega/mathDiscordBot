@@ -5,7 +5,7 @@ Contains Generators for the equations
 from random import randint
 
 def add_gen(rangeArray):
-    """Takes input of an array containing range. Returns str of unique 2 num equation and their sum"""
+    """Takes array of min and max values. Returns str of unique 2 num equation and their sum"""
     num1 = randint(rangeArray[0], rangeArray[1])
     num2 = randint(rangeArray[0], rangeArray[1])
     sum = num1 + num2
@@ -14,7 +14,7 @@ def add_gen(rangeArray):
     return equation, sum
 
 def subtract_gen(rangeArray):
-    """Takes min and max of both num1 and num2. Returns str of unique 2 num equation and their difference"""
+    """Takes array of min and max values. Returns str of unique 2 num equation and their difference"""
     num1 = randint(rangeArray[0], rangeArray[1])
     num2 = randint(rangeArray[0], rangeArray[1])
     diff = num1 - num2
@@ -23,9 +23,9 @@ def subtract_gen(rangeArray):
     return equation, diff
 
 def multiply_gen(rangeArray):
-    """Takes no input. Returns str of unique 2 num equation and their product"""
+    """Takes array of min and max values. Returns str of unique 2 num equation and their product"""
     num1 = randint(rangeArray[0], rangeArray[1])
-    num2 = randint(rangeArray[2], rangeArray[1])
+    num2 = randint(rangeArray[2], rangeArray[3])
     product = num1 * num2
     equation = str(num1) + " * " + str(num2) + " = "
 
@@ -33,7 +33,7 @@ def multiply_gen(rangeArray):
 
 
 def division_gen(rangeArray):
-    """Takes no input. Returns str of unique 2 num equation and their quotient"""
+    """Takes array of min and max values. Returns str of unique 2 num equation and their quotient"""
     quotient = randint(rangeArray[0], rangeArray[1])
     num2 = randint(rangeArray[2], rangeArray[3])
     num1 = quotient * num2
@@ -49,32 +49,30 @@ levels = {
     "hard": [[1, 1000], [1, 1000], [1, 100, 1, 100], [1, 100, 1, 100]]
 }
 
+
+#FIXME: in main, add eq_gen(difficulty) with difficulty gotten from user
 def eq_gen(difficulty):
     """Takes in difficulty. Randomly returns sum_gen, subtract_gen, multiply_gen, or division_gen"""
 
 
     options = {
-        # 1: add_gen(levels[difficulty][0]),
-        # 2: subtract_gen(levels[difficulty][1]),
-        # 3: multiply_gen(levels[difficulty][2])
-        1: division_gen(levels[difficulty][3])
+        1: add_gen(levels[difficulty][0]),
+        2: subtract_gen(levels[difficulty][1]),
+        3: multiply_gen(levels[difficulty][2]),
+        4: division_gen(levels[difficulty][3])
     }
 
     # randomly picks a generator from options
     return options[randint(1, len(options))]
 
 
-difficulty = input("easy, medium, hard")
-for i in range(10):
-
-    # print(levels[difficulty][0][0])
-    # print(levels[difficulty][0][1])
-    # print(levels[difficulty][2][])
-    # print(levels[difficulty][3])
-
-    # print(add_gen(levels[difficulty][0]))
-    eq, ans = eq_gen(difficulty)
-    print(eq + " " + str(ans).ljust(20))
+# # difficulty = input("easy, medium, hard")
+# difficulty = "hard"
+# for i in range(20):
+#
+#     # print(add_gen(levels[difficulty][0]))
+#     eq, ans = eq_gen(difficulty)
+#     print(eq + " " + str(ans).ljust(20))
 
 
 
