@@ -39,7 +39,11 @@ async def startMath(context):
         if msg.content != f'{bot_prefix}quit':
             score.update_score(msg.author.name)
             questNum -= 1
+        
 
+@client.command(name='quit')
+async def stopMath(context):
+    channel = client.get_channel(general_id)
     await channel.send(score.get_final_score())
     await channel.send('goodbye!')
 
