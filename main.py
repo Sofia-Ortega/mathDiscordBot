@@ -40,11 +40,22 @@ async def startMath(context):
             score.update_score(msg.author.name)
             questNum -= 1
         
+        if msg.content == f'{bot_prefix}quit':
+            return
+
+    # if quit is never called
+    await channel.send(score.get_final_score())
+    score.reset_score()
+    await channel.send('goodbye!')
+        
 
 @client.command(name='quit')
 async def stopMath(context):
     channel = client.get_channel(general_id)
+    if not bool(score):
+        return
     await channel.send(score.get_final_score())
+    score.reset_score()
     await channel.send('goodbye!')
 
 
@@ -52,7 +63,7 @@ async def stopMath(context):
 async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
     general_channel = client.get_channel(general_id)
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games"))
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
     await general_channel.send("Lets gooooo")
 
 client.run(token)
