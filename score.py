@@ -18,5 +18,3 @@ def get_final_score():
         final_score += key + ": " + str(score[key]) + "\n"
 
     return final_score
-
-print(get_final_score())
