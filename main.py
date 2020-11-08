@@ -9,8 +9,9 @@ import score
 import config
 
 token = config.CONFIG['token']
-general_id = config.CONFIG['channel_id']
+main_id = config.CONFIG['channel_id']
 bot_prefix = config.CONFIG['bot_prefix']
+category_name = config.CONFIG['category']
 
 agree = ['yes', 'y', 'ya', 'yah', 'yep']
 disagree = ['no', 'n', 'na', 'nah', 'nay']
@@ -45,6 +46,7 @@ async def startMath(context):
         questNum = 100
         def check_sec(m):
             return m.content.isdigit() or m.content == f'{bot_prefix}quit'
+
 
         await channel.send("How many seconds would you like (Enter an integer): ")
         msg = await client.wait_for('message', check=check_int)
@@ -88,8 +90,10 @@ async def startMath(context):
     # quit if user types {bot_prefix}quit
     while continue_game(msg):
 
+        
         equation, answer = eq_gen(difficulty)
         await channel.send(equation)
+        
 
         def checkAns(m):
             # checks correct ans
@@ -107,17 +111,15 @@ async def startMath(context):
     # if quit is never called
     await channel.send(score.get_final_score())
     score.reset_score()
-    await channel.send('goodbye!')
 
 
 @client.command(name='quit')
 async def stopMath(context):
-    channel = client.get_channel(general_id)
+    channel = client.get_channel(context.channel.id)
     if not bool(score.score):
         return
     await channel.send(score.get_final_score())
     score.reset_score()
-    await channel.send('goodbye!')
 
 
 @client.command(name='new_channel')
@@ -129,7 +131,13 @@ async def make_channel(context):
         guild.default_role: discord.PermissionOverwrite(read_messages=False),
         guild.me: discord.PermissionOverwrite(read_messages=True),
     }
-    channel = await guild.create_text_channel('secret-channel', overwrites=overwrites)
+
+    if category_name == '': # if a category is not defined in config
+        category = discord.utils.get(context.guild.categories)
+    else: # if a category is defined in config
+        category = discord.utils.get(context.guild.categories, name=category_name)
+
+    channel = await guild.create_text_channel(f'{context.message.author.name}s-game', overwrites=overwrites, category=category)
     await channel.set_permissions(member, read_messages=True, send_messages=True)
     return channel.id
 
@@ -137,7 +145,7 @@ async def make_channel(context):
 @client.event
 async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
-    general_channel = client.get_channel(general_id)
+    general_channel = client.get_channel(main_id)
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
     await general_channel.send("How do you do?")
 
