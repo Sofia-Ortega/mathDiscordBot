@@ -13,7 +13,7 @@ def update_score(name):
         score[name] = 1
 
 def get_final_score():
-    final_score = "AND THE SCORES ARE:\n"
+    final_score = ''
     for key in score:
         final_score += key + ": " + str(score[key]) + "\n"
 
