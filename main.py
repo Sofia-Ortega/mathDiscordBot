@@ -4,7 +4,9 @@ import discord
 from discord.utils import get
 from discord.ext.commands import Bot
 import time
+import asyncio
 from generator import eq_gen
+
 import score
 import config
 
@@ -18,26 +20,28 @@ disagree = ['no', 'n', 'na', 'nah', 'nay']
 
 client = Bot(command_prefix=bot_prefix)
 
-@client.command(name='start')
-async def startMath(context):
-    channel_id = await context.invoke(client.get_command('new_channel'))
-    channel = client.get_channel(channel_id)
-    await channel.send('Hey there, <@' + str(context.message.author.id) + '>')
+# ---------------- GAMES ---------------- #
+@client.command(name='start_math_game')
+async def startMath(context, channel):
 
+    await channel.send(':white_small_square::small_blue_diamond::white_small_square::small_blue_diamond::white_small_square:')
+    await channel.send(f'Type {bot_prefix}quit if you want to stop playing')
+    timed_question = await channel.send('Would you like to be timed?')
+    await timed_question.add_reaction('👍')
+    await timed_question.add_reaction('👎')
 
-    # check if user wants a timed mode
-    def check_time(m):
-        if m.content.lower() in agree or m.content.lower() in disagree:
-            return True
+    def check_react(reaction, user):
+            return user == context.author
+
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check_react)
+    except asyncio.TimeoutError:
+        time_mode = False
+    else:
+        if str(reaction.emoji) == '👍':
+            time_mode = True
         else:
-            return False
-
-    await channel.send('Would you like to be timed?')
-    msg = await client.wait_for('message', check=check_time)
-
-    time_mode = False
-    if msg.content.lower() in agree:
-        time_mode = True
+            time_mode = False
 
     def check_int(m):
         return m.content.isdigit() or m.content == f'{bot_prefix}quit'
@@ -50,10 +54,10 @@ async def startMath(context):
 
         await channel.send("How many seconds would you like (Enter an integer): ")
         msg = await client.wait_for('message', check=check_int)
-        timer = int(msg.content)
+        time_desired = int(msg.content)
 
         startTime = time.time()
-        endTime = startTime + timer
+        endTime = startTime + time_desired
 
     else:
 
@@ -83,13 +87,12 @@ async def startMath(context):
             return False
         elif not(timer()):
             return False
-        elif not time_mode and questNum < 0:
+        elif not time_mode and questNum <= 0:
             return False
         return True
 
     # quit if user types {bot_prefix}quit
     while continue_game(msg):
-
         
         equation, answer = eq_gen(difficulty)
         await channel.send(equation)
@@ -113,8 +116,31 @@ async def startMath(context):
     score.reset_score()
 
 
+# ---------------- COMMANDS ---------------- #
+@client.command(name='start')
+async def startGame(context):
+    channel_id = await context.invoke(client.get_command('new_channel'))
+    channel = client.get_channel(channel_id)
+    await channel.send('Hey there, <@' + str(context.message.author.id) + '>')
+    
+    embedVar = discord.Embed(title='Game Time!', description='', color=0xFFFFFF)
+    embedVar.add_field(name='Adding players: ', value=f'{bot_prefix}add <tag player>', inline=True)
+    embedVar.add_field(name='Ready to choose game: ', value=f'{bot_prefix}done', inline=False)
+    await channel.send(embed=embedVar)
+
+    def checkMsg(m):
+        # checks correct ans
+        return m.content == f'{bot_prefix}done'
+
+    done = False
+    while not done:
+        done = await client.wait_for('message', check=checkMsg)
+    
+    await context.invoke(client.get_command('game_prompt'), channel)
+
+
 @client.command(name='quit')
-async def stopMath(context):
+async def stopGame(context):
     channel = client.get_channel(context.channel.id)
     if not bool(score.score):
         return
@@ -123,7 +149,6 @@ async def stopMath(context):
 
 
 @client.command(name='new_channel')
-#@client.command(name='new_channel')
 async def make_channel(context):
     guild = context.guild
     member = context.author
@@ -142,6 +167,55 @@ async def make_channel(context):
     return channel.id
 
 
+@client.command(name='add')
+async def addUserToSession(context, member):
+    channel_id = context.channel.id
+    channel = client.get_channel(channel_id)
+    try:
+        member_id = member.split('@')[1].split('>')[0]
+    except:
+        await channel.send('User not found.')
+        return
+    try:
+        user = client.get_user(int(member_id)) # discord.User type
+    except:
+        await channel.send('User not found.')
+        return
+    if user: # if user is found
+        await channel.set_permissions(user, read_messages=True, send_messages=True)
+        await channel.send(f'{user.name} has been added.')
+    else: # if user is not found
+        await channel.send('User not found.')
+
+
+@client.command(name='game_prompt')
+async def gamePrompt(context, channel):
+    prompt = await channel.send('\nWhat game would you like to play?\nMath Game: 💡')
+    await prompt.add_reaction('💡')
+
+    def check_react(reaction, user):
+            return user == context.author
+
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check_react)
+    except asyncio.TimeoutError:
+        math = False
+    else:
+        if str(reaction.emoji) == '💡':
+            math = True
+        # else if for other games ... or create a dictionary for this selection
+        else:
+            math = False
+    
+    if math:
+        await context.invoke(client.get_command('start_math_game'), channel)
+
+@client.command(name='done')
+async def doneTask(context):
+    return
+
+
+# ---------------- EVENTS ---------------- #
 @client.event
 async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
@@ -149,4 +223,6 @@ async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
     await general_channel.send("How do you do?")
 
+
+# ---------------- INIT ---------------- #
 client.run(token)
