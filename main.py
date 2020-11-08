@@ -45,9 +45,6 @@ async def startMath(context, channel):
         difficulty = 'medium'
     else:
         difficulty = 'hard'
-
-    if difficulty == f'{bot_prefix}stop':
-        return
     
     timed_question = await channel.send('Timed or not timed?')
     await timed_question.add_reaction('👍')
@@ -141,6 +138,9 @@ async def startMath(context, channel):
     await channel.send(score.get_final_score())
     score.reset_score()
 
+    time.sleep(1)
+    await context.invoke(client.get_command('play_again'), channel)
+
 
 # ---------------- COMMANDS ---------------- #
 @client.command(name='start')
@@ -178,6 +178,33 @@ async def stopGame(context):
         return
     await channel.send(score.get_final_score())
     score.reset_score()
+
+    await context.invoke(client.get_command('play_again'), channel)
+
+
+@client.command(name='play_again')
+async def playAgain(context, channel):
+    prompt = await channel.send('Would you like to play another game?')
+
+    def check_lvl(reaction, user):
+        return user == context.author
+
+    await prompt.add_reaction('✅')
+    await prompt.add_reaction('❌')
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=120.0, check=check_lvl)
+    except asyncio.TimeoutError:
+        again = False
+
+    if str(reaction.emoji) == '✅':
+        again = True
+    elif str(reaction.emoji) == '❌':
+        again = False
+    
+    if again:
+        await context.invoke(client.get_command('game_prompt'), channel)
+    else:
+        await channel.delete()
 
 
 @client.command(name='new_channel')
@@ -229,7 +256,7 @@ async def gamePrompt(context, channel):
             return user == context.author
 
     try:
-        reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check_react)
+        reaction, user = await client.wait_for('reaction_add', timeout=360.0, check=check_react)
     except asyncio.TimeoutError:
         math = False
     else:
