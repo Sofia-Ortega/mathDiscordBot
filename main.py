@@ -5,9 +5,9 @@ from discord.utils import get
 from discord.ext.commands import Bot
 import time
 import asyncio
-from generator import eq_gen
 
-import score
+from math_game.generator import eq_gen
+import math_game.score as score
 import config
 
 token = config.CONFIG['token']
@@ -19,6 +19,7 @@ agree = ['yes', 'y', 'ya', 'yah', 'yep']
 disagree = ['no', 'n', 'na', 'nah', 'nay']
 
 client = Bot(command_prefix=bot_prefix)
+client.remove_command('help')
 
 # ---------------- GAMES ---------------- #
 @client.command(name='start_math_game')
@@ -75,25 +76,23 @@ async def startMath(context, channel):
         await channel.send("Enter the game length in seconds: ")
         msg = await client.wait_for('message', check=check_int)
         time_desired = int(msg.content)
-        startTime = time.time()
-        endTime = startTime + time_desired
 
     else:
         await channel.send("Please enter the number of math question you would like: ")
         msg = await client.wait_for('message', check=check_int)
         questNum = int(msg.content)
 
-    def timer():
+    def timer(end):
         """returns false if time runs out and in time_mode"""
         if time_mode:
-            return not(time.time() > endTime)
+            return not(time.time() > end)
         else:
             return True
 
-    def continue_game(m):
+    def continue_game(m,end):
         if m.content == f'{bot_prefix}stop':
             return False
-        elif not(timer()):
+        elif not(timer(end)):
             return False
         elif not time_mode and questNum <= 0:
             return False
@@ -112,9 +111,14 @@ async def startMath(context, channel):
             await channel.send(':green_circle:  ' + str(countdown))
         time.sleep(1)
         countdown = countdown - 1
+    
+    endTime = 0
+    if time_mode:
+        startTime = time.time()
+        endTime = startTime + time_desired
 
     # stop if user types {bot_prefix}stop
-    while continue_game(msg):
+    while continue_game(msg, endTime):
         
         equation, answer = eq_gen(difficulty)
         await channel.send(':small_blue_diamond: ' + equation)
@@ -138,6 +142,13 @@ async def startMath(context, channel):
     await channel.send(score.get_final_score())
     score.reset_score()
 
+    time.sleep(1)
+    await context.invoke(client.get_command('play_again'), channel)
+
+
+@client.command(name='start_chess')
+async def startChess(context, channel):
+    await channel.send("Chess time!")
     time.sleep(1)
     await context.invoke(client.get_command('play_again'), channel)
 
@@ -166,18 +177,37 @@ async def startGame(context):
 
 
 @client.command(name='quit')
-async def quitGame(context):
-    return
+async def quitGame(context, channel):
+    prompt = await channel.send('Would you like to play another game?')
+
+    def check_lvl(reaction, user):
+        return user == context.author
+
+    await prompt.add_reaction('✅')
+    await prompt.add_reaction('❌')
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=120.0, check=check_lvl)
+    except asyncio.TimeoutError:
+        again = False
+
+    if str(reaction.emoji) == '✅':
+        again = True
+    elif str(reaction.emoji) == '❌':
+        again = False
+    
+    if again:
+        await context.invoke(client.get_command('game_prompt'), channel)
+    else:
+        await channel.delete()
 
 
 @client.command(name='stop')
 async def stopGame(context):
     channel = client.get_channel(context.channel.id)
     await channel.send('Game over!')
-    if not bool(score.score):
-        return
-    await channel.send(score.get_final_score())
-    score.reset_score()
+    if bool(score.score):
+        await channel.send(score.get_final_score())
+        score.reset_score()
 
     await context.invoke(client.get_command('play_again'), channel)
 
@@ -249,29 +279,56 @@ async def addUserToSession(context, member):
 
 @client.command(name='game_prompt')
 async def gamePrompt(context, channel):
-    prompt = await channel.send('\nWhat game would you like to play?\nMath Game: 💡')
+    prompt = await channel.send('\nWhat game would you like to play?\nMath Game: 💡\nChess: ♟️')
     await prompt.add_reaction('💡')
+    await prompt.add_reaction('♟️')
 
     def check_react(reaction, user):
-            return user == context.author
+            return (user == context.author and str(reaction.emoji) == '♟️') or (user == context.author and str(reaction.emoji) == '💡')
 
+    math = False
+    chess = False
     try:
         reaction, user = await client.wait_for('reaction_add', timeout=360.0, check=check_react)
     except asyncio.TimeoutError:
         math = False
+        chess = False
     else:
         if str(reaction.emoji) == '💡':
             math = True
         # else if for other games ... or create a dictionary for this selection
+        elif str(reaction.emoji) == '♟️':
+            chess = True
         else:
             math = False
     
     if math:
         await context.invoke(client.get_command('start_math_game'), channel)
+    elif chess:
+        await context.invoke(client.get_command('start_chess'), channel)
+
 
 @client.command(name='play')
 async def playGame(context):
     return
+
+
+@client.command(name='info')
+async def info(context):
+    channel_id = context.channel.id
+    channel = client.get_channel(channel_id)
+    embed=discord.Embed(title="**Game Bot**", description="A bot made for playing games and having fun! Invite your friends along or try to beat your scores! We could all use a little fun, what better way than to play some games right here on discord.", color=0x800000)
+    embed.add_field(name="`!start`", value="Initiate a game session", inline=False)
+    embed.add_field(name="`!add @player`", value="Add player to your session", inline=False)
+    embed.add_field(name="`!play`", value="Ready to play! Choose your game.", inline=False)
+    embed.add_field(name="`!stop`", value="End the game, or play a different one", inline=False)
+    embed.add_field(name="Source Code", value="https://github.com/Sofia-Ortega/mathDiscordBot", inline=False)
+    embed.set_footer(text="Created by Sophia Ortega and Andrew Fennell")
+    await channel.send(embed=embed)
+
+@client.command(name='help')
+async def help(context):
+    await context.invoke(client.get_command('info'))
 
 
 # ---------------- EVENTS ---------------- #
@@ -280,7 +337,7 @@ async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
     general_channel = client.get_channel(main_id)
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
-    await general_channel.send("How do you do?")
+    await general_channel.send("Beep Boop. Powering on...")
 
 
 # ---------------- INIT ---------------- #
