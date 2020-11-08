@@ -3,6 +3,7 @@
 import discord
 from discord.utils import get
 from discord.ext.commands import Bot
+import time
 from generator import eq_gen
 import score
 import config
@@ -12,6 +13,9 @@ main_id = config.CONFIG['channel_id']
 bot_prefix = config.CONFIG['bot_prefix']
 category_name = config.CONFIG['category']
 
+agree = ['yes', 'y', 'ya', 'yah', 'yep']
+disagree = ['no', 'n', 'na', 'nah', 'nay']
+
 client = Bot(command_prefix=bot_prefix)
 
 @client.command(name='start')
@@ -20,20 +24,76 @@ async def startMath(context):
     channel = client.get_channel(channel_id)
     await channel.send('Hey there, <@' + str(context.message.author.id) + '>')
 
-    def checkint(m):
+
+    # check if user wants a timed mode
+    def check_time(m):
+        if m.content.lower() in agree or m.content.lower() in disagree:
+            return True
+        else:
+            return False
+
+    await channel.send('Would you like to be timed?')
+    msg = await client.wait_for('message', check=check_time)
+
+    time_mode = False
+    if msg.content.lower() in agree:
+        time_mode = True
+
+    def check_int(m):
+        return m.content.isdigit() or m.content == f'{bot_prefix}quit'
+
+    if time_mode:
+        questNum = 100
+        def check_sec(m):
             return m.content.isdigit() or m.content == f'{bot_prefix}quit'
 
-    await channel.send(f'Type "{bot_prefix}quit" to stop playing...')
-    await channel.send("Please enter the number of math question you would like: ")
-    msg = await client.wait_for('message', check=checkint)
-    questNum = int(msg.content)
+
+        await channel.send("How many seconds would you like (Enter an integer): ")
+        msg = await client.wait_for('message', check=check_int)
+        timer = int(msg.content)
+
+        startTime = time.time()
+        endTime = startTime + timer
+
+    else:
+
+        await channel.send("Please enter the number of math question you would like: ")
+        msg = await client.wait_for('message', check=check_int)
+        questNum = int(msg.content)
+
+    def check_lvl(m):
+        if m.content.lower() in {'easy', 'medium', 'hard'}:
+            return True
+        else:
+            return False
+
+    await channel.send("Would you like 'easy', 'medium', or 'hard' level?")
+    msg = await client.wait_for('message', check=check_lvl)
+    difficulty = msg.content
+
+    def timer():
+        """returns false if time runs out and in time_mode"""
+        if time_mode:
+            return not(time.time() > endTime)
+        else:
+            return True
+
+    def continue_game(m):
+        if m.content == f'{bot_prefix}quit':
+            return False
+        elif not(timer()):
+            return False
+        elif not time_mode and questNum < 0:
+            return False
+        return True
 
     # quit if user types {bot_prefix}quit
-    while msg.content != f'{bot_prefix}quit' and questNum > 0:
+    while continue_game(msg):
 
-
-        equation, answer = eq_gen()
-        await channel.send(':large_blue_diamond:\t' + equation + '\t:large_blue_diamond:')
+        
+        equation, answer = eq_gen(difficulty)
+        await channel.send(equation)
+        
 
         def checkAns(m):
             # checks correct ans
@@ -51,7 +111,7 @@ async def startMath(context):
     # if quit is never called
     await channel.send(score.get_final_score())
     score.reset_score()
-        
+
 
 @client.command(name='quit')
 async def stopMath(context):
@@ -87,6 +147,6 @@ async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
     general_channel = client.get_channel(main_id)
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
-    await general_channel.send("Lets gooooo")
+    await general_channel.send("How do you do?")
 
 client.run(token)
