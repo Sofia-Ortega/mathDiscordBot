@@ -179,9 +179,10 @@ async def startGame(context):
 
 
 @client.command(name='setting')
-async def default_setting(context):
+async def default_setting(context, key=""):
     channel = client.get_channel(main_id)
-    await channel.send(set.display_setting())
+    await channel.send(set.display_setting(key))
+
 
 @client.command(name='quit')
 async def quitGame(context, channel):
