@@ -10,7 +10,6 @@ import asyncio
 from math_game.generator import eq_gen
 import math_game.score as score
 import config
-import math_game.setting as set
 
 token = config.CONFIG['token']
 main_id = config.CONFIG['channel_id']
@@ -178,10 +177,6 @@ async def startGame(context):
     await context.invoke(client.get_command('game_prompt'), channel)
 
 
-@client.command(name='setting')
-async def default_setting(context, key=""):
-    channel = client.get_channel(main_id)
-    await channel.send(set.display_setting(key))
 
 
 @client.command(name='quit')
