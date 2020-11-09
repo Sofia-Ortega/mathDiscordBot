@@ -5,15 +5,15 @@ from discord.utils import get
 from discord.ext.commands import Bot
 import time
 from generator import eq_gen
-import score
-import config
+import score, config
+import setting as set
 
 token = config.CONFIG['token']
 general_id = config.CONFIG['channel_id']
 bot_prefix = config.CONFIG['bot_prefix']
 
-agree = ['yes', 'y', 'ya', 'yah', 'yep']
-disagree = ['no', 'n', 'na', 'nah', 'nay']
+agree = ['yes', 'y', 'ya', 'yah', 'yep', 'true']
+disagree = ['no', 'n', 'na', 'nah', 'nay', 'false']
 
 client = Bot(command_prefix=bot_prefix)
 
@@ -92,7 +92,7 @@ async def startMath(context):
         await channel.send(equation)
 
         def checkAns(m):
-            # checks correct ans
+            # checks correct answer to equation
             return m.content == str(answer) or m.content == f'{bot_prefix}quit'
 
         msg = await client.wait_for('message', check=checkAns)
@@ -109,6 +109,11 @@ async def startMath(context):
     score.reset_score()
     await channel.send('goodbye!')
 
+
+@client.command(name='setting')
+async def change_setting(context):
+    channel = client.get_channel(general_id)
+    await channel.send(set.display_setting())
 
 @client.command(name='quit')
 async def stopMath(context):
