@@ -323,7 +323,7 @@ async def info(context):
     embed.add_field(name="`!play`", value="Ready to play! Choose your game.", inline=False)
     embed.add_field(name="`!stop`", value="End the game, or play a different one", inline=False)
     embed.add_field(name="Source Code", value="https://github.com/Sofia-Ortega/mathDiscordBot", inline=False)
-    embed.set_footer(text="Created by Sophia Ortega and Andrew Fennell")
+    embed.set_footer(text="Created by Sofia Ortega and Andrew Fennell")
     await channel.send(embed=embed)
 
 @client.command(name='help')
