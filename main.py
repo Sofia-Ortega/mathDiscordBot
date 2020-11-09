@@ -32,12 +32,11 @@ client.remove_command('help')
 # ---------------- GAMES ---------------- #
 @client.command(name='start_math_game')
 async def startMath(context, channel):
-    c = channel
     await channel.send(':white_small_square::small_blue_diamond:Math Game:small_blue_diamond::white_small_square:')
     await channel.send(f'Type **{bot_prefix}stop** if you want to stop playing')
 
     def check_lvl(reaction, user):
-        return user == context.author
+        return user == context.author and reaction.message.channel.id == channel.id
 
     difficulty_question = await channel.send("Would you like 'easy', 'medium', or 'hard' level?")
     await difficulty_question.add_reaction('🟩')
@@ -60,7 +59,7 @@ async def startMath(context, channel):
     await timed_question.add_reaction('👎')
 
     def check_react(reaction, user):
-            return user == context.author
+            return user == context.author and reaction.message.channel.id == channel.id
 
     try:
         reaction, user = await client.wait_for('reaction_add', timeout=120.0, check=check_react)
@@ -185,7 +184,7 @@ async def quitGame(context, channel):
     prompt = await channel.send('Would you like to play another game?')
 
     def check_lvl(reaction, user):
-        return user == context.author
+        return user == context.author and reaction.message.channel.id == channel.id
 
     await prompt.add_reaction('✅')
     await prompt.add_reaction('❌')
@@ -221,7 +220,7 @@ async def playAgain(context, channel):
     prompt = await channel.send('Would you like to play another game?')
 
     def check_lvl(reaction, user):
-        return user == context.author
+        return user == context.author and reaction.message.channel.id == channel.id
 
     await prompt.add_reaction('✅')
     await prompt.add_reaction('❌')
