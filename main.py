@@ -19,7 +19,14 @@ category_name = config.CONFIG['category']
 agree = ['yes', 'y', 'ya', 'yah', 'yep', 'true']
 disagree = ['no', 'n', 'na', 'nah', 'nay', 'false']
 
-client = Bot(command_prefix=bot_prefix)
+messages_to_new_members = False
+try:
+    intents=intents=discord.Intents.all()
+    client = Bot(command_prefix=bot_prefix,intents=intents)
+    messages_to_new_members = True
+except:
+    client = Bot(command_prefix=bot_prefix)
+
 client.remove_command('help')
 
 # ---------------- GAMES ---------------- #
@@ -143,13 +150,6 @@ async def startMath(context, channel):
     await channel.send(score.get_final_score())
     score.reset_score()
 
-    time.sleep(1)
-    await context.invoke(client.get_command('play_again'), channel)
-
-
-@client.command(name='start_chess')
-async def startChess(context, channel):
-    await channel.send("Chess time!")
     time.sleep(1)
     await context.invoke(client.get_command('play_again'), channel)
 
@@ -282,51 +282,48 @@ async def addUserToSession(context, member):
 
 @client.command(name='game_prompt')
 async def gamePrompt(context, channel):
-    prompt = await channel.send('\nWhat game would you like to play?\nMath Game: 💡\nChess: ♟️')
+    prompt = await channel.send('\nWhat game would you like to play?\nMath Game: 💡')
     await prompt.add_reaction('💡')
-    await prompt.add_reaction('♟️')
 
     def check_react(reaction, user):
             return (user == context.author and str(reaction.emoji) == '♟️') or (user == context.author and str(reaction.emoji) == '💡')
 
     math = False
-    chess = False
     try:
         reaction, user = await client.wait_for('reaction_add', timeout=360.0, check=check_react)
     except asyncio.TimeoutError:
         math = False
-        chess = False
     else:
         if str(reaction.emoji) == '💡':
             math = True
         # else if for other games ... or create a dictionary for this selection
-        elif str(reaction.emoji) == '♟️':
-            chess = True
         else:
             math = False
     
     if math:
         await context.invoke(client.get_command('start_math_game'), channel)
-    elif chess:
-        await context.invoke(client.get_command('start_chess'), channel)
 
 
 @client.command(name='play')
 async def playGame(context):
     return
 
+def makeInfoEmbed():
+    embed=discord.Embed(title="**Game Bot**", description="A bot made for playing games and having fun! Invite your friends along or try to beat your scores! We could all use a little fun, what better way than to play some games right here on discord.", color=0x800000)
+    embed.add_field(name=f"`{bot_prefix}help`", value="List of commands", inline=False)
+    embed.add_field(name=f"`{bot_prefix}start`", value="Initiate a game session", inline=False)
+    embed.add_field(name=f"`{bot_prefix}add @player`", value="Add player to your session", inline=False)
+    embed.add_field(name=f"`{bot_prefix}play`", value="Ready to play! Choose your game.", inline=False)
+    embed.add_field(name=f"`{bot_prefix}stop`", value="End the game, or play a different one", inline=False)
+    embed.add_field(name="Source Code", value="https://github.com/Sofia-Ortega/mathDiscordBot", inline=False)
+    embed.set_footer(text="Created by Sofia Ortega and Andrew Fennell")
+    return embed
 
 @client.command(name='info')
 async def info(context):
     channel_id = context.channel.id
     channel = client.get_channel(channel_id)
-    embed=discord.Embed(title="**Game Bot**", description="A bot made for playing games and having fun! Invite your friends along or try to beat your scores! We could all use a little fun, what better way than to play some games right here on discord.", color=0x800000)
-    embed.add_field(name="`!start`", value="Initiate a game session", inline=False)
-    embed.add_field(name="`!add @player`", value="Add player to your session", inline=False)
-    embed.add_field(name="`!play`", value="Ready to play! Choose your game.", inline=False)
-    embed.add_field(name="`!stop`", value="End the game, or play a different one", inline=False)
-    embed.add_field(name="Source Code", value="https://github.com/Sofia-Ortega/mathDiscordBot", inline=False)
-    embed.set_footer(text="Created by Sofia Ortega and Andrew Fennell")
+    embed = makeInfoEmbed()
     await channel.send(embed=embed)
 
 @client.command(name='help')
@@ -341,6 +338,12 @@ async def on_ready():
     general_channel = client.get_channel(main_id)
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
     await general_channel.send("Beep Boop. Powering on...")
+    await general_channel.send(embed=makeInfoEmbed())
+
+@client.event
+async def on_member_join(member):
+    if messages_to_new_members:
+        await member.send(embed=makeInfoEmbed())
 
 
 # ---------------- INIT ---------------- #
