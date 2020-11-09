@@ -179,7 +179,7 @@ async def startGame(context):
 
 
 @client.command(name='setting')
-async def change_setting(context):
+async def default_setting(context):
     channel = client.get_channel(main_id)
     await channel.send(set.display_setting())
 
