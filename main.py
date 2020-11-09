@@ -4,19 +4,21 @@ import discord
 from discord.utils import get
 from discord.ext.commands import Bot
 import time
+
 import asyncio
 
 from math_game.generator import eq_gen
 import math_game.score as score
 import config
+import setting as set
 
 token = config.CONFIG['token']
 main_id = config.CONFIG['channel_id']
 bot_prefix = config.CONFIG['bot_prefix']
 category_name = config.CONFIG['category']
 
-agree = ['yes', 'y', 'ya', 'yah', 'yep']
-disagree = ['no', 'n', 'na', 'nah', 'nay']
+agree = ['yes', 'y', 'ya', 'yah', 'yep', 'true']
+disagree = ['no', 'n', 'na', 'nah', 'nay', 'false']
 
 client = Bot(command_prefix=bot_prefix)
 client.remove_command('help')
@@ -125,7 +127,7 @@ async def startMath(context, channel):
         
 
         def checkAns(m):
-            # checks correct ans
+             # checks correct answer to equation
             return m.content == str(answer) or m.content == f'{bot_prefix}stop'
 
         msg = await client.wait_for('message', check=checkAns)
@@ -175,6 +177,11 @@ async def startGame(context):
     
     await context.invoke(client.get_command('game_prompt'), channel)
 
+
+@client.command(name='setting')
+async def change_setting(context):
+    channel = client.get_channel(general_id)
+    await channel.send(set.display_setting())
 
 @client.command(name='quit')
 async def quitGame(context, channel):
