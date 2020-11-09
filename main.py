@@ -1,7 +1,7 @@
 """Main executor for code"""
 
 import discord
-from discord.utils import get
+from discord.utils import get,find
 from discord.ext.commands import Bot
 import time
 
@@ -12,7 +12,7 @@ import math_game.score as score
 import config
 
 token = config.CONFIG['token']
-main_id = config.CONFIG['channel_id']
+main_id = -1
 bot_prefix = config.CONFIG['bot_prefix']
 category_name = config.CONFIG['category']
 
@@ -32,7 +32,7 @@ client.remove_command('help')
 # ---------------- GAMES ---------------- #
 @client.command(name='start_math_game')
 async def startMath(context, channel):
-
+    c = channel
     await channel.send(':white_small_square::small_blue_diamond:Math Game:small_blue_diamond::white_small_square:')
     await channel.send(f'Type **{bot_prefix}stop** if you want to stop playing')
 
@@ -73,12 +73,12 @@ async def startMath(context, channel):
             time_mode = False
 
     def check_int(m):
-        return m.content.isdigit() or m.content == f'{bot_prefix}stop'
+        return (m.content.isdigit() or m.content == f'{bot_prefix}stop') and m.channel.id == channel.id
 
     if time_mode:
         questNum = 100
         def check_sec(m):
-            return m.content.isdigit() or m.content == f'{bot_prefix}stop'
+            return (m.content.isdigit() or m.content == f'{bot_prefix}stop') and channel.id == m.channel.id
 
 
         await channel.send("Enter the game length in seconds: ")
@@ -134,12 +134,12 @@ async def startMath(context, channel):
 
         def checkAns(m):
              # checks correct answer to equation
-            return m.content == str(answer) or m.content == f'{bot_prefix}stop'
+            return (m.content == str(answer) or m.content == f'{bot_prefix}stop') and m.channel.id == channel.id
 
         msg = await client.wait_for('message', check=checkAns)
 
         if msg.content != f'{bot_prefix}stop':
-            score.update_score(msg.author.name)
+            score.update_score(channel.id, msg.author.name)
             questNum -= 1
         
         if msg.content == f'{bot_prefix}stop':
@@ -147,8 +147,8 @@ async def startMath(context, channel):
 
     # if stop is never called
     await channel.send('Game over!')
-    await channel.send(score.get_final_score())
-    score.reset_score()
+    await channel.send(score.get_final_score(channel.id))
+    score.reset_score(channel.id)
 
     time.sleep(1)
     await context.invoke(client.get_command('play_again'), channel)
@@ -161,20 +161,21 @@ async def startGame(context):
     channel = client.get_channel(channel_id)
     await channel.send('Hey there, <@' + str(context.message.author.id) + '>')
     
-    embedVar = discord.Embed(title='Game Time!', description='', color=0x000000)
+    embedVar = discord.Embed(title='Game Time!', description='', color=0x800000)
     embedVar.add_field(name='To add players: ', value=f'{bot_prefix}add @player', inline=True)
     embedVar.add_field(name='When you are ready to play: ', value=f'{bot_prefix}play', inline=False)
     await channel.send(embed=embedVar)
 
     def checkMsg(m):
         # checks correct ans
-        return m.content == f'{bot_prefix}play'
+        return m.content == f'{bot_prefix}play' and m.channel.id == channel_id
 
     play = False
     while not play:
         play = await client.wait_for('message', check=checkMsg)
     
-    await context.invoke(client.get_command('game_prompt'), channel)
+    await client.loop.create_task(gamePrompt(context,channel))
+    #await context.invoke(client.get_command('game_prompt'), channel)
 
 
 
@@ -208,9 +209,9 @@ async def quitGame(context, channel):
 async def stopGame(context):
     channel = client.get_channel(context.channel.id)
     await channel.send('Game over!')
-    if bool(score.score):
-        await channel.send(score.get_final_score())
-        score.reset_score()
+    if bool(score.score[channel.id]):
+        await channel.send(score.get_final_score(channel.id))
+        score.reset_score(channel.id)
 
     await context.invoke(client.get_command('play_again'), channel)
 
@@ -281,12 +282,12 @@ async def addUserToSession(context, member):
 
 
 @client.command(name='game_prompt')
-async def gamePrompt(context, channel):
-    prompt = await channel.send('\nWhat game would you like to play?\nMath Game: 💡')
+async def gamePrompt(context, c):
+    prompt = await c.send('\nWhat game would you like to play?\nMath Game: 💡')
     await prompt.add_reaction('💡')
 
     def check_react(reaction, user):
-            return (user == context.author and str(reaction.emoji) == '♟️') or (user == context.author and str(reaction.emoji) == '💡')
+            return (user == context.author and reaction.message.channel.id == c.id and str(reaction.emoji) == '💡')
 
     math = False
     try:
@@ -301,7 +302,7 @@ async def gamePrompt(context, channel):
             math = False
     
     if math:
-        await context.invoke(client.get_command('start_math_game'), channel)
+        await startMath(context, c)
 
 
 @client.command(name='play')
@@ -309,12 +310,13 @@ async def playGame(context):
     return
 
 def makeInfoEmbed():
-    embed=discord.Embed(title="**Game Bot**", description="A bot made for playing games and having fun! Invite your friends along or try to beat your scores! We could all use a little fun, what better way than to play some games right here on discord.", color=0x800000)
+    embed=discord.Embed(title="**Game Bot**", description="A bot made for playing games and having fun! Invite your friends along or try to beat your scores! We could all use a little fun, what better way than to play some games right here on discord.\n-----------------------------", color=0x800000)
     embed.add_field(name=f"`{bot_prefix}help`", value="List of commands", inline=False)
-    embed.add_field(name=f"`{bot_prefix}start`", value="Initiate a game session", inline=False)
+    embed.add_field(name=f"`{bot_prefix}start`", value="Initiate a game session\n-----------------------------", inline=False)
+    embed.add_field(name='Once you start a game:', value="-----------------------------", inline=False)
     embed.add_field(name=f"`{bot_prefix}add @player`", value="Add player to your session", inline=False)
-    embed.add_field(name=f"`{bot_prefix}play`", value="Ready to play! Choose your game.", inline=False)
-    embed.add_field(name=f"`{bot_prefix}stop`", value="End the game, or play a different one", inline=False)
+    embed.add_field(name=f"`{bot_prefix}play`", value="Ready to play! Choose your game mode.", inline=False)
+    embed.add_field(name=f"`{bot_prefix}stop`", value="End the game", inline=False)
     embed.add_field(name="Source Code", value="https://github.com/Sofia-Ortega/mathDiscordBot", inline=False)
     embed.set_footer(text="Created by Sofia Ortega and Andrew Fennell")
     return embed
@@ -332,6 +334,13 @@ async def help(context):
 
 
 # ---------------- EVENTS ---------------- #
+@client.event
+async def on_guild_join(guild):
+    general = find(lambda x: x.name == 'general',  guild.text_channels)
+    if general and general.permissions_for(guild.me).send_messages:
+        await general.send(embed=makeInfoEmbed())
+        main_id = general
+
 @client.event
 async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
