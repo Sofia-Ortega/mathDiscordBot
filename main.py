@@ -12,12 +12,8 @@ import math_game.score as score
 import config
 
 token = config.CONFIG['token']
-main_id = -1
 bot_prefix = config.CONFIG['bot_prefix']
 category_name = config.CONFIG['category']
-
-agree = ['yes', 'y', 'ya', 'yah', 'yep', 'true']
-disagree = ['no', 'n', 'na', 'nah', 'nay', 'false']
 
 messages_to_new_members = False
 try:
@@ -343,10 +339,15 @@ async def on_guild_join(guild):
 @client.event
 async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
-    general_channel = client.get_channel(main_id)
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="games..."))
-    await general_channel.send("Beep Boop. Powering on...")
-    await general_channel.send(embed=makeInfoEmbed())
+
+    for guild in client.guilds:
+        general = find(lambda x: x.name == 'general',  guild.text_channels)
+        if general and general.permissions_for(guild.me).send_messages:
+            main_id = general.id
+            general_channel = client.get_channel(main_id)
+            await general_channel.send("Beep Boop. Powering on...")
+            await general_channel.send(embed=makeInfoEmbed())
 
 @client.event
 async def on_member_join(member):
