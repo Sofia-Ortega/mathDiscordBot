@@ -7,7 +7,7 @@ The bot is made for Discord using discord.py.<br />
 
 1. Add the bot to your server using the following link:<br />
 https://discord.com/oauth2/authorize?client_id=560906890863968266&permissions=8&scope=bot<br />
-2. Choost a server for the bot to join.<br />
+2. Choose a server for the bot to join.<br />
 
 ## Step by Step Guide
 
