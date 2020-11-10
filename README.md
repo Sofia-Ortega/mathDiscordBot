@@ -3,7 +3,7 @@
 A bot made for playing games and having fun! Invite your friends along or try to beat your scores!<br />
 The bot is made for Discord using discord.py.<br />
 
-## Running The Bot
+## Add Bot to Server
 
 1. Add the bot to your server using the following link:<br />
 https://discord.com/oauth2/authorize?client_id=560906890863968266&permissions=8&scope=bot<br />
@@ -36,3 +36,7 @@ If you would like to host this bot yourself, following these instructions:<br />
     `category` - Optional, if you want game channels to be created in a particular category in the server<br />
     `bot_prefix` - This will be the prefix character(s) needed to activate commands (i.e. !start, -start, ?start)<br />
 3. Deploy via https://dashboard.heroku.com
+
+## Documentation
+
+https://docs.google.com/document/d/1mFkZvgCi1YJQEzA1DRVQ-88jSvVf2Aci77bu760S1lw/edit?usp=sharing
